@@ -1,0 +1,4 @@
+#!/usr/bin/env python
+
+import myflask
+myflask.init_db()

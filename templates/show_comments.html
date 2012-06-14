@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block body %}
+    <ul class=entry>
+        <h2>{{ entry.title }}</h2>{{ entry.text|safe }}
+        
+        <h3> <dt>Comments: </h3>
+        <ul class=comments>
+        {% for comment in comments %}
+            <h2>{{ comment.title }}</h2>{{ comment.text|safe }}
+        {% else %}
+            <li><em>No comments so far</em>
+        {% endfor %}
+        </ul>
+    </ul>
+    <form action="{{ url_for('add_comment', entry_id=entry_id) }}" method=post class=add-comment>
+        <dl>
+            <dt>Title:
+            <dd><input type=text size=30 name=title>
+            <dt>E-mail:
+            <dd><input type=text size=30 name=email>
+            <dt>Text:
+            <dd><textarea name=text rows=5 cols=40></textarea>
+            <dd><input type=submit value=Share>
+        </dl>
+    </form>
+{% endblock%}
