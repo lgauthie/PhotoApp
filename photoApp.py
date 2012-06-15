@@ -1,18 +1,15 @@
 # all the imports
-import unicodedata
+import os
 import sqlite3
 from contextlib import closing
 from flask import Flask, request, session, g, redirect, url_for, \
-    abort, render_template, flash
+    abort, render_template, flash, send_from_directory
+from werkzeug import secure_filename
 
 DATABASE = '/tmp/photoApp.db'
+UPLOAD_FOLDER = '/tmp/photoAppUploads'
 DEBUG = True
 SECRET_KEY = 'development key'
-USERS = {'admin':'default','leesifer':'password12345'}
-CURRENT_USER = None
-USERNAME = 'admin'
-PASSWORD = 'default'
-UPLOAD_FOLDER = '/tmp/photoUploads'
 ALLOWED_EXTENSIONS = set(['png','jpg','gif'])
 
 app = Flask(__name__)
@@ -37,10 +34,6 @@ def init_db():
 def before_request():
     g.db = connect_db()
 
-def normstr(string):
-    if type(string) == str:
-        unicodedata.normalize('NFKD', string).encode('ascii','ignore')
-
 
 # Close the connection when leaving
 @app.teardown_request
@@ -50,12 +43,14 @@ def teardown_request(exception):
 # Root Page, shows entries
 @app.route('/')
 def home():
-#    query = """select title, text, id
-#               from entries
-#               order by id desc"""
-#    cur = g.db.execute(query)
-#    entries = [dict(title=row[0], text=row[1], id=row[2]) for row in cur.fetchall()]
+    if session['logged_in']:
+       return redirect(url_for('user_home', username=str(session['user'])))
     return render_template('home.html')
+
+# Userpage
+@app.route('/user/<string:username>')
+def user_home(username):
+    return render_template('home.html', username=username)
 
 # The login page
 @app.route('/login', methods=['GET', 'POST'])
@@ -70,8 +65,9 @@ def login():
         value = [request.form['username']]
         cur = g.db.execute(query, value)
         val = cur.fetchone()
+
         if not val:
-            error = 'Incalid username'
+            error = 'Invalid username'
             return render_template('login.html', error=error)
 
         entry = str(val[0])
@@ -122,10 +118,45 @@ def create_user():
         g.db.commit()
     return redirect(url_for('login'))
 
+# Upload Page
 @app.route('/upload', methods=['GET','POST'])
 def upload():
     error = None
-    return render_template('create_user.html', error=error)
+    if request.method == 'POST':
+        fileX = request.files['file']
+        if fileX and allowed_file(fileX.filename):
+            filename = secure_filename(fileX.filename)
+            fileX.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return redirect(url_for('uploaded_file', filename=filename))
+        else:
+            flash('Invalid Filename')
+    return render_template('upload.html', error=error)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'],
+                                   filename)
+
+#@app.route('/upload', methods=['GET', 'POST'])
+#def upload():
+#    if request.method == 'POST' and 'photo' in request.files:
+#        filename = photos.save(request.files['photo'])
+#        rec = Photo(filename=filename, user=g.user.id)
+#        rec.store()
+#        flash("Photo saved.")
+#        return redirect(url_for('show', id=rec.id))
+#    return render_template('upload.html')
+#
+#@app.route('/photo/<id>')
+#def show(id):
+#    photo = Photo.load(id)
+#    if photo is None:
+#        abort(404)
+#    url = photos.url(photo.filename)
+#    return render_template('show.html', url=url, photo=photo)
 
 if __name__ == '__main__':
     app.run()

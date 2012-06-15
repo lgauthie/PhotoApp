@@ -1,4 +1,7 @@
 {% extends "layout.html" %}
 {% block body %}
+    {% if session.logged_in %}
+        <h1>Hello, {{ username }}<h1>
+    {% endif %}
 {% endblock %}
 
