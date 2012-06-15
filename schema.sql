@@ -5,6 +5,7 @@ drop table if exists users;
 create table users(
     id integer primary key autoincrement,
     username string not null,
+
     -- This should be hashed at some point --
     password string not null
 );

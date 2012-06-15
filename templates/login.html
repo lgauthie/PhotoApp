@@ -11,4 +11,16 @@
             <dd><input type=submit value=Login>
         </dl>
     </form>
+    <h2>New User</h2>
+    <form action="{{ url_for('create_user') }}" method=post>
+        <dl>
+            <dt>Username:
+            <dd><input type=text name=create_username>
+            <dt>Password:
+            <dd><input type=password name=create_password>
+            <dt>Password Again:
+            <dd><input type=password name=check_password>
+            <dd><input type=submit value=Create>
+        </dl>
+    </form>
 {% endblock %}
